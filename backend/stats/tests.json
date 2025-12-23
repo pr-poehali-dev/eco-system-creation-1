@@ -1,0 +1,19 @@
+{
+  "tests": [
+    {
+      "name": "Get statistics",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalRevenue": "number",
+        "totalProfit": "number",
+        "profitMargin": "number",
+        "activeDeals": "number",
+        "salesData": "array",
+        "profitData": "array"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

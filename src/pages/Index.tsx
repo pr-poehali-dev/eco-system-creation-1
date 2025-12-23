@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,46 +18,72 @@ interface Deal {
   profit: number;
 }
 
-const mockDeals: Deal[] = [
-  { id: 1, client: 'ООО "Альфа"', amount: 250000, status: 'completed', date: '15.12.2024', profit: 45000 },
-  { id: 2, client: 'ИП Петров', amount: 180000, status: 'active', date: '18.12.2024', profit: 32000 },
-  { id: 3, client: 'ООО "Бета"', amount: 420000, status: 'pending', date: '20.12.2024', profit: 75000 },
-  { id: 4, client: 'ОАО "Гамма"', amount: 310000, status: 'active', date: '21.12.2024', profit: 55000 },
-];
-
-const salesData = [
-  { month: 'Окт', value: 450000 },
-  { month: 'Ноя', value: 620000 },
-  { month: 'Дек', value: 850000 },
-];
-
-const profitData = [
-  { month: 'Окт', value: 12.5 },
-  { month: 'Ноя', value: 15.2 },
-  { month: 'Дек', value: 18.7 },
-];
+const DEALS_API = 'https://functions.poehali.dev/2ccf8889-715d-43ff-b42e-ff0b840425ac';
+const STATS_API = 'https://functions.poehali.dev/f3cad22a-cbff-4891-8866-19dd4a584477';
 
 export default function Index() {
   const [activeSection, setActiveSection] = useState('dashboard');
-  const [deals, setDeals] = useState<Deal[]>(mockDeals);
+  const [deals, setDeals] = useState<Deal[]>([]);
   const [newDeal, setNewDeal] = useState({ client: '', amount: '', profit: '' });
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    totalProfit: 0,
+    profitMargin: 0,
+    activeDeals: 0,
+    salesData: [] as Array<{month: string, value: number}>,
+    profitData: [] as Array<{month: string, value: number}>
+  });
+  const [isLoading, setIsLoading] = useState(true);
 
-  const totalRevenue = deals.reduce((sum, deal) => sum + deal.amount, 0);
-  const totalProfit = deals.reduce((sum, deal) => sum + deal.profit, 0);
-  const profitMargin = ((totalProfit / totalRevenue) * 100).toFixed(1);
+  useEffect(() => {
+    loadDeals();
+    loadStats();
+  }, []);
 
-  const handleAddDeal = () => {
+  const loadDeals = async () => {
+    try {
+      const response = await fetch(DEALS_API);
+      const data = await response.json();
+      setDeals(data.deals || []);
+    } catch (error) {
+      console.error('Failed to load deals:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const response = await fetch(STATS_API);
+      const data = await response.json();
+      setStats(data);
+    } catch (error) {
+      console.error('Failed to load stats:', error);
+    }
+  };
+
+  const handleAddDeal = async () => {
     if (newDeal.client && newDeal.amount && newDeal.profit) {
-      const deal: Deal = {
-        id: deals.length + 1,
-        client: newDeal.client,
-        amount: parseFloat(newDeal.amount),
-        status: 'pending',
-        date: new Date().toLocaleDateString('ru-RU'),
-        profit: parseFloat(newDeal.profit),
-      };
-      setDeals([...deals, deal]);
-      setNewDeal({ client: '', amount: '', profit: '' });
+      try {
+        const response = await fetch(DEALS_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client_name: newDeal.client,
+            amount: parseFloat(newDeal.amount),
+            profit: parseFloat(newDeal.profit),
+            deal_date: new Date().toISOString().split('T')[0]
+          })
+        });
+        
+        if (response.ok) {
+          await loadDeals();
+          await loadStats();
+          setNewDeal({ client: '', amount: '', profit: '' });
+        }
+      } catch (error) {
+        console.error('Failed to add deal:', error);
+      }
     }
   };
 
@@ -151,7 +177,7 @@ export default function Index() {
                     <Icon name="DollarSign" size={20} className="text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{totalRevenue.toLocaleString('ru-RU')} ₽</div>
+                    <div className="text-2xl font-bold">{stats.totalRevenue.toLocaleString('ru-RU')} ₽</div>
                     <p className="text-xs text-muted-foreground mt-1">+12.5% к прошлому месяцу</p>
                   </CardContent>
                 </Card>
@@ -162,8 +188,8 @@ export default function Index() {
                     <Icon name="TrendingUp" size={20} className="text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{totalProfit.toLocaleString('ru-RU')} ₽</div>
-                    <p className="text-xs text-muted-foreground mt-1">Рентабельность {profitMargin}%</p>
+                    <div className="text-2xl font-bold">{stats.totalProfit.toLocaleString('ru-RU')} ₽</div>
+                    <p className="text-xs text-muted-foreground mt-1">Рентабельность {stats.profitMargin}%</p>
                   </CardContent>
                 </Card>
 
@@ -173,7 +199,7 @@ export default function Index() {
                     <Icon name="Activity" size={20} className="text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{deals.filter(d => d.status === 'active').length}</div>
+                    <div className="text-2xl font-bold">{stats.activeDeals}</div>
                     <p className="text-xs text-muted-foreground mt-1">Всего сделок: {deals.length}</p>
                   </CardContent>
                 </Card>
@@ -187,7 +213,7 @@ export default function Index() {
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={250}>
-                      <LineChart data={salesData}>
+                      <LineChart data={stats.salesData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                         <XAxis dataKey="month" stroke="#6b7280" />
                         <YAxis stroke="#6b7280" />
@@ -208,7 +234,7 @@ export default function Index() {
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={250}>
-                      <BarChart data={profitData}>
+                      <BarChart data={stats.profitData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                         <XAxis dataKey="month" stroke="#6b7280" />
                         <YAxis stroke="#6b7280" />

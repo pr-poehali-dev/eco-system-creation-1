@@ -1,0 +1,30 @@
+{
+  "tests": [
+    {
+      "name": "Get all deals",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "deals": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Create new deal",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "client_name": "Тестовый клиент",
+        "amount": 100000,
+        "profit": 15000,
+        "deal_date": "2024-12-23"
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "deal": "object"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
