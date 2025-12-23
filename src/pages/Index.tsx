@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import TradingDealsTable from '@/components/TradingDealsTable';
 
 interface Deal {
   id: number;
@@ -287,6 +288,10 @@ export default function Index() {
           )}
 
           {activeSection === 'deals' && (
+            <TradingDealsTable />
+          )}
+
+          {activeSection === 'old-deals' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <div>

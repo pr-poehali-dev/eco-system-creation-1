@@ -1,0 +1,33 @@
+{
+  "tests": [
+    {
+      "name": "Get all trading deals",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "deals": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Create new trading deal",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "trader_name": "Тестовый трейдер",
+        "platform": "PL",
+        "trade_date": "2024-12-23",
+        "buy_rub": 100000,
+        "buy_rate": 99.5,
+        "buy_deal_id": "TEST-001",
+        "sell_rate": 98.5
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "deal": "object"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
